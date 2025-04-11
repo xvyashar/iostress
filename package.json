@@ -40,7 +40,13 @@
     "trailingComma": "all"
   },
   "devDependencies": {
+    "@types/node": "^22.13.16",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "kleur": "^4.1.5",
+    "ora": "^8.2.0",
+    "socket.io-client": "^4.8.1"
   }
 }
