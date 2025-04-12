@@ -1,4 +1,5 @@
 import { ManagerOptions, Socket, SocketOptions } from 'socket.io-client';
+import { ILogger } from './runner.types';
 
 /**
  * Configuration options for running IO stress tests
@@ -43,7 +44,10 @@ export type StressScenarioInitializer = (
  * A stress test scenario function that executes socket operations
  * @param {Socket} socket - The initialized Socket.io client connection
  */
-export type StressScenario = (socket: Socket) => void | Promise<void>;
+export type StressScenario = (
+  socket: Socket,
+  logger: ILogger,
+) => void | Promise<void>;
 
 /**
  * A stress test report (array of phases report)

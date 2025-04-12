@@ -32,10 +32,7 @@ export interface ClientReport {
     reconnectAttempts: number;
     reconnectSuccess: number;
   };
-  errors: {
-    type: string;
-    error: any;
-  }[];
+  errors: string[];
   events: {
     sent: number;
     received: number;
@@ -53,10 +50,7 @@ export interface RunnerReport {
     reconnectAttempts: number;
     reconnectSuccess: number;
   };
-  errors: {
-    type: string;
-    error: any;
-  }[];
+  errors: string[];
   events: {
     sent: number;
     received: number;
@@ -71,3 +65,10 @@ export type ClientStatus = {
   runningClients: number;
   finishedClients: number;
 };
+
+export interface ILogger {
+  log: (message: string, type?: string) => void;
+  error: (message: string | Error, type?: string) => void;
+  warn: (message: string, type?: string) => void;
+  debug: (message: string, type?: string) => void;
+}

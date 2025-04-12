@@ -1,8 +1,9 @@
 import { io, ManagerOptions, Socket, SocketOptions } from 'socket.io-client';
-import { ClientOptions, ClientReport } from '../types';
+import { ClientOptions, ClientReport, StressScenario } from '../types';
 import { Performance } from '../utils';
 import { isPromise } from 'node:util/types';
 import EventEmitter from 'node:events';
+import { Logger } from './logger';
 
 export class Client extends EventEmitter {
   private socket: Socket;
@@ -23,12 +24,17 @@ export class Client extends EventEmitter {
     },
   };
   private performance: Performance = new Performance();
+  private logger = new Logger();
 
   constructor(
     private readonly options: ClientOptions,
     initializer: Partial<ManagerOptions & SocketOptions>,
   ) {
     super();
+
+    this.logger.on('error', (type) => {
+      this.report.errors.push(type);
+    });
 
     const connTimer = this.performance.start();
     this.socket = io(this.options.target, initializer);
@@ -46,7 +52,7 @@ export class Client extends EventEmitter {
     });
 
     this.socket.on('connect_error', (error) => {
-      this.report.errors.push({ type: 'connection', error });
+      this.logger.error(error, 'Connection');
 
       if (!this.socket.active) {
         this.emit('finished', this.report);
@@ -62,7 +68,7 @@ export class Client extends EventEmitter {
     });
 
     this.socket.on('reconnect_error', (error) => {
-      this.report.errors.push({ type: 'connection', error });
+      this.logger.error(error, 'Connection');
     });
 
     //* Event tracking
@@ -88,7 +94,7 @@ export class Client extends EventEmitter {
             return result;
           } catch (error) {
             this.report.events.failed++; //? failed ack
-            this.report.errors.push({ type: 'business', error });
+            this.logger.error(error as Error, 'Business');
           }
         };
       }
@@ -118,7 +124,7 @@ export class Client extends EventEmitter {
     let timeout: NodeJS.Timeout | undefined;
 
     try {
-      const fn = eval(this.options.scenario);
+      const fn = eval(this.options.scenario) as StressScenario;
 
       if (this.options.scenarioTimeout) {
         timeout = setTimeout(() => {
@@ -129,13 +135,13 @@ export class Client extends EventEmitter {
         }, this.options.scenarioTimeout);
       }
 
-      fn(this.socket);
+      fn(this.socket, this.logger);
 
       this.emit('running');
     } catch (error) {
       if (timeout) clearTimeout(timeout);
 
-      this.report.errors.push({ type: 'business', error });
+      this.logger.error(error as Error, 'Business');
 
       this.socket.off();
       this.socket.offAny();
