@@ -28,3 +28,19 @@ export const sleep = (ms: number) =>
 
 export const random = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
+
+export const calculatePercentiles = (
+  percentiles: number[],
+  latencies: number[],
+) => {
+  const sortedLatencies = [...latencies].sort((a, b) => a - b);
+
+  const results: Record<string, number> = {};
+
+  for (const percentile of percentiles) {
+    const index = Math.ceil((percentile / 100) * sortedLatencies.length) - 1;
+    results[`p${percentile}`] = sortedLatencies[index];
+  }
+
+  return results;
+};

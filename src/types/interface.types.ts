@@ -61,7 +61,6 @@ export interface StressReport {
     failed: number;
     averageConnectionTime: number;
     reconnectAttempts: number;
-    reconnectSuccessRate?: number;
   };
   events: {
     sent: number;

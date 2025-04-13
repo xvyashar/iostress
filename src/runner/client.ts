@@ -9,12 +9,16 @@ export class Client extends EventEmitter {
   private socket: Socket;
   private report: ClientReport = {
     connection: {
+      attempted: false,
       latency: -1,
       success: false,
       reconnectAttempts: 0,
       reconnectSuccess: 0,
     },
-    errors: [],
+    errors: {
+      total: 0,
+      byType: {},
+    },
     events: {
       sent: 0,
       received: 0,
@@ -33,7 +37,9 @@ export class Client extends EventEmitter {
     super();
 
     this.logger.on('error', (type) => {
-      this.report.errors.push(type);
+      this.report.errors.total++;
+      this.report.errors.byType[type] =
+        (this.report.errors.byType[type] ?? 0) + 1;
     });
 
     const connTimer = this.performance.start();
@@ -49,6 +55,8 @@ export class Client extends EventEmitter {
 
         this.report.connection.success = true;
       }
+
+      this.report.connection.attempted = true;
     });
 
     this.socket.on('connect_error', (error) => {

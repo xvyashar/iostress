@@ -12,14 +12,18 @@ const {
 };
 
 const runnerReport: RunnerReport = {
-  connection: {
-    latencyFrames: [],
+  connections: {
+    attempted: 0,
     successful: 0,
     failed: 0,
     reconnectAttempts: 0,
     reconnectSuccess: 0,
+    latencyFrames: [],
   },
-  errors: [],
+  errors: {
+    total: 0,
+    byType: {},
+  },
   events: {
     sent: 0,
     received: 0,
@@ -83,18 +87,28 @@ const runPhaseSlice = async () => {
         },
       });
 
-      runnerReport.connection.latencyFrames.push(report.connection.latency);
-      if (report.connection.success) {
-        runnerReport.connection.successful++;
-      } else {
-        runnerReport.connection.failed++;
-      }
-      runnerReport.connection.reconnectAttempts +=
+      if (report.connection.attempted) runnerReport.connections.attempted++;
+      if (report.connection.success) runnerReport.connections.successful++;
+      else runnerReport.connections.failed++;
+
+      runnerReport.connections.reconnectAttempts +=
         report.connection.reconnectAttempts;
-      runnerReport.connection.reconnectSuccess +=
+      runnerReport.connections.reconnectSuccess +=
         report.connection.reconnectSuccess;
 
-      runnerReport.errors.push(...report.errors);
+      runnerReport.connections.latencyFrames.push(report.connection.latency);
+
+      runnerReport.errors.total += report.errors.total;
+      for (const errorType in report.errors.byType) {
+        if (runnerReport.errors.byType[errorType]) {
+          runnerReport.errors.byType[errorType] +=
+            report.errors.byType[errorType];
+        } else {
+          runnerReport.errors.byType[errorType] =
+            report.errors.byType[errorType];
+        }
+      }
+
       runnerReport.events.sent += report.events.sent;
       runnerReport.events.received += report.events.received;
       runnerReport.events.successful += report.events.successful;

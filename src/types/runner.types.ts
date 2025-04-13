@@ -27,12 +27,16 @@ export interface ClientOptions {
 
 export interface ClientReport {
   connection: {
+    attempted: boolean;
     latency: number;
     success: boolean;
     reconnectAttempts: number;
     reconnectSuccess: number;
   };
-  errors: string[];
+  errors: {
+    total: number;
+    byType: Record<string, number>;
+  };
   events: {
     sent: number;
     received: number;
@@ -43,14 +47,18 @@ export interface ClientReport {
 }
 
 export interface RunnerReport {
-  connection: {
-    latencyFrames: number[];
+  connections: {
+    attempted: number;
     successful: number;
     failed: number;
     reconnectAttempts: number;
     reconnectSuccess: number;
+    latencyFrames: number[];
   };
-  errors: string[];
+  errors: {
+    total: number;
+    byType: Record<string, number>;
+  };
   events: {
     sent: number;
     received: number;

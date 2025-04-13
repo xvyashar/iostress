@@ -1,12 +1,21 @@
 import { ManagerOptions } from 'socket.io-client';
-import { ClientStatus, RunnerReport, StressPhase } from '../types';
+import {
+  ClientStatus,
+  RunnerReport,
+  StressPhase,
+  StressReport,
+} from '../types';
 import { SocketOptions } from 'dgram';
 import { availableParallelism } from 'os';
 import path from 'path';
 import { Worker } from 'node:worker_threads';
 import EventEmitter from 'node:events';
+import { calculatePercentiles, Performance } from '../utils';
 
 export class TaskManager extends EventEmitter {
+  private performance = new Performance();
+  private phaseTimer?: number;
+
   private workersStatus: Record<
     number,
     {
@@ -43,6 +52,8 @@ export class TaskManager extends EventEmitter {
           (this.phase.maxClients - this.phase.minClients) / threadsCount,
         )
       : 0;
+
+    this.phaseTimer = this.performance.start();
 
     for (let i = 0; i < threadsCount; i++) {
       const starterInitializers = this.phase.initializers.slice(
@@ -128,6 +139,108 @@ export class TaskManager extends EventEmitter {
       }
     }
 
-    // TODO: handle report
+    this.emit('gathering');
+
+    const finalReport: StressReport = {
+      phase: this.phase.name,
+      testDuration: this.performance.measure(this.phaseTimer!) / 1000,
+      connections: {
+        attempted: 0,
+        successful: 0,
+        failed: 0,
+        averageConnectionTime: 0,
+        reconnectAttempts: 0,
+      },
+      events: {
+        sent: 0,
+        received: 0,
+        successful: 0,
+        failed: 0,
+        throughput: 0,
+      },
+      latency: {
+        average: 0,
+        min: -1,
+        max: -1,
+        p50: 0,
+        p85: 0,
+        p95: 0,
+        p99: 0,
+      },
+      errors: {
+        total: 0,
+        byType: {},
+      },
+    };
+
+    const connectionsFramesData = {
+      total: 0,
+      sum: 0,
+    };
+    const latencyFrames: number[] = [];
+
+    for (const { report } of Object.values(this.workersStatus)) {
+      if (!report) continue;
+
+      finalReport.connections.attempted += report.connections.attempted;
+      finalReport.connections.successful += report.connections.successful;
+      finalReport.connections.failed += report.connections.failed;
+      finalReport.connections.reconnectAttempts +=
+        report.connections.reconnectAttempts;
+
+      finalReport.events.sent += report.events.sent;
+      finalReport.events.received += report.events.received;
+      finalReport.events.successful += report.events.successful;
+      finalReport.events.failed += report.events.failed;
+
+      finalReport.latency.min =
+        finalReport.latency.min === -1
+          ? Math.min(...report.events.latencyFrames)
+          : Math.min(...report.events.latencyFrames, finalReport.latency.min);
+      finalReport.latency.max = Math.max(
+        ...report.events.latencyFrames,
+        finalReport.latency.max,
+      );
+
+      finalReport.errors.total += report.errors.total;
+      for (const errorType in report.errors.byType) {
+        if (finalReport.errors.byType[errorType]) {
+          finalReport.errors.byType[errorType] +=
+            report.errors.byType[errorType];
+        } else {
+          finalReport.errors.byType[errorType] =
+            report.errors.byType[errorType];
+        }
+      }
+
+      connectionsFramesData.total += report.connections.latencyFrames.length;
+      connectionsFramesData.sum += report.connections.latencyFrames.reduce(
+        (acc, cur) => acc + cur,
+        0,
+      );
+      latencyFrames.push(...report.events.latencyFrames);
+    }
+
+    finalReport.connections.averageConnectionTime =
+      connectionsFramesData.sum / connectionsFramesData.total;
+
+    finalReport.latency.average =
+      latencyFrames.reduce((acc, cur) => acc + cur, 0) / latencyFrames.length;
+
+    finalReport.events.throughput = Number(
+      (1000 / finalReport.latency.average).toFixed(2),
+    );
+
+    const { p50, p85, p95, p99 } = calculatePercentiles(
+      [50, 85, 95, 99],
+      latencyFrames,
+    );
+
+    finalReport.latency.p50 = p50;
+    finalReport.latency.p85 = p85;
+    finalReport.latency.p95 = p95;
+    finalReport.latency.p99 = p99;
+
+    this.emit('finished', finalReport);
   }
 }
