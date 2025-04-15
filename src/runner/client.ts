@@ -139,9 +139,6 @@ export class Client extends EventEmitter {
 
       if (this.options.scenarioTimeout) {
         timeout = setTimeout(() => {
-          this.socket.off();
-          this.socket.offAny();
-          this.socket.offAnyOutgoing();
           this.socket.disconnect();
         }, this.options.scenarioTimeout);
       }
@@ -154,9 +151,6 @@ export class Client extends EventEmitter {
 
       this.logger.error(error as Error, 'Business');
 
-      this.socket.off();
-      this.socket.offAny();
-      this.socket.offAnyOutgoing();
       this.socket.disconnect();
     }
   }
