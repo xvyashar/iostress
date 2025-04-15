@@ -8,6 +8,7 @@ const {
   phase: {
     starterInitializers,
     finalInitializers,
+    rampDelayRate,
     scenarioPath,
     scenarioTimeout,
   },
@@ -48,7 +49,7 @@ const runPhaseSlice = async () => {
   let lazy = false;
 
   for (const initializer of [...starterInitializers, ...finalInitializers]) {
-    if (lazy) await sleep(random(1, 10) * 100);
+    if (lazy) await sleep(random(1, 10) * (rampDelayRate ?? 100));
 
     readyClients++;
 

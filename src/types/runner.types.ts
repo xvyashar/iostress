@@ -15,6 +15,7 @@ export interface SerializableStressPhase {
   name: string;
   starterInitializers: Partial<ManagerOptions & SocketOptions>[];
   finalInitializers: Partial<ManagerOptions & SocketOptions>[];
+  rampDelayRate?: number;
   scenarioPath: string;
   scenarioTimeout?: number;
 }

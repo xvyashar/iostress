@@ -2,6 +2,7 @@ import { ManagerOptions } from 'socket.io-client';
 import {
   ClientStatus,
   RunnerReport,
+  SerializableStressPhase,
   StressPhase,
   StressReport,
 } from '../types';
@@ -75,10 +76,13 @@ export class TaskManager extends EventEmitter {
         workerData: {
           target: this.target,
           phase: {
+            name: this.phase.name,
             starterInitializers,
             finalInitializers,
+            rampDelayRate: this.phase.rampDelayRate,
             scenarioPath,
-          },
+            scenarioTimeout: this.phase.scenarioTimeout,
+          } as SerializableStressPhase,
         },
       });
 

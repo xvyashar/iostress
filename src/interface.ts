@@ -43,6 +43,7 @@ export class IOStress {
           name: phase.name,
           minClients: phase.minClients,
           maxClients: phase.maxClients,
+          rampDelayRate: phase.rampDelayRate,
           initializers,
           scenarioPath: phase.scenarioPath,
           scenarioTimeout: phase.scenarioTimeout,

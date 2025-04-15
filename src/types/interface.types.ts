@@ -18,6 +18,7 @@ export interface IOStressOptions {
  * @property {string} name - Name of the stress test phase
  * @property {number} minClients - Minimum number of concurrent clients to run
  * @property {number} [maxClients] - Optional maximum number of concurrent clients
+ * @property {number} [rampDelayRate] - Default: 100
  * @property {StressScenarioInitializer} [scenarioInitializer] - Optional function to initialize the socket connection
  * @property {string} scenarioPath - The js file that exports stress test scenario function to execute
  * @property {number} [scenarioTimeout] - Optional timeout in milliseconds for the scenario
@@ -26,6 +27,7 @@ export interface StressPhase {
   name: string;
   minClients: number;
   maxClients?: number;
+  rampDelayRate?: number;
   scenarioInitializer?: StressScenarioInitializer;
   scenarioPath: string;
   scenarioTimeout?: number;

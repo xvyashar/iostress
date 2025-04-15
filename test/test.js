@@ -6,7 +6,7 @@ const stressTest = new IOStress({
   phases: [
     {
       name: 'Test',
-      minClients: 90,
+      minClients: 10,
       maxClients: 100,
       scenarioPath: path.join(__dirname, 'scenario.js'),
       scenarioTimeout: 20000,
