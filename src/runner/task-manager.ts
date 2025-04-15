@@ -241,6 +241,9 @@ export class TaskManager extends EventEmitter {
     finalReport.latency.p95 = p95;
     finalReport.latency.p99 = p99;
 
-    this.emit('finished', finalReport);
+    this.emit('finished', {
+      report: finalReport,
+      workerErrors: this.workerErrors,
+    });
   }
 }
