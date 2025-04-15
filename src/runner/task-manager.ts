@@ -60,9 +60,10 @@ export class TaskManager extends EventEmitter {
         i * starterClientsPerThread,
         (i + 1) * starterClientsPerThread,
       );
+      const starterGap = threadsCount * starterClientsPerThread;
       const finalInitializers = this.phase.initializers.slice(
-        i * finalClientsPerThread,
-        (i + 1) * finalClientsPerThread,
+        i * finalClientsPerThread + starterGap,
+        (i + 1) * finalClientsPerThread + starterGap,
       );
 
       const scenarioStr = this.phase.scenario.toString();

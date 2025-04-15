@@ -29,15 +29,15 @@ export class IOStress {
         console.log(`Testing phase: ${kleur.green(phase.name)}...`);
 
         const phaseBuildSpinner = createSpinner(
-          '🛠️ Building phase initializers...',
+          'Building phase initializers...',
         ).start();
         const initializers = await this.buildPhaseInitializers(phase).catch(
           (error) => {
-            phaseBuildSpinner.error('🛠️ Failed to build phase initializers!');
+            phaseBuildSpinner.error('Failed to build phase initializers!');
             throw error;
           },
         );
-        phaseBuildSpinner.success('🛠️ Phase initializers built');
+        phaseBuildSpinner.success('Phase initializers built');
 
         const taskManager = new TaskManager(this.options.target, {
           name: phase.name,
@@ -48,13 +48,13 @@ export class IOStress {
           scenarioTimeout: phase.scenarioTimeout,
         });
 
-        const testingSpinner = createSpinner('💥 Running test...').start();
+        const testingSpinner = createSpinner('Running test...').start();
 
         taskManager.on(
           'status',
           ({ readyClients, runningClients, finishedClients }: ClientStatus) => {
             testingSpinner.update(
-              `💥 Running test...\n${kleur.gray(
+              `Running test...\n${kleur.gray(
                 `  - [${readyClients}] ready clients\n  - [${runningClients}] running clients\n  - [${finishedClients}] finished clients`,
               )}`,
             );
@@ -62,7 +62,7 @@ export class IOStress {
         );
 
         taskManager.on('gathering', () => {
-          testingSpinner.update('🔄️ Generating report...');
+          testingSpinner.update('Generating report...');
         });
 
         taskManager.on(
@@ -79,16 +79,16 @@ export class IOStress {
               JSON.stringify(report, null, 2),
               (error) => {
                 if (error) {
-                  testingSpinner.error('❌ Failed to write report file!');
+                  testingSpinner.error('Failed to write report file!');
                   console.error(error);
                   resolve();
                   return;
                 }
 
-                testingSpinner.success('✅ Phase finished!');
+                testingSpinner.success('Phase finished!');
 
                 if (Object.keys(workerErrors).length) {
-                  console.log(kleur.red('❌ Workers errors:'));
+                  console.log(kleur.red('Workers errors:'));
                   console.log(kleur.gray(inspect(workerErrors)));
                 }
 
@@ -109,9 +109,9 @@ export class IOStress {
     const initializers: Partial<ManagerOptions & SocketOptions>[] = [];
     const { scenarioInitializer, minClients, maxClients } = phase;
 
-    for (let j = 0; j < (maxClients ?? minClients); j++) {
+    for (let i = 0; i < (maxClients ?? minClients); i++) {
       if (scenarioInitializer) {
-        initializers.push(scenarioInitializer(j));
+        initializers.push(scenarioInitializer(i));
       } else {
         initializers.push({});
       }
