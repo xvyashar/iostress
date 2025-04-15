@@ -44,7 +44,7 @@ export class IOStress {
           minClients: phase.minClients,
           maxClients: phase.maxClients,
           initializers,
-          scenario: phase.scenario,
+          scenarioPath: phase.scenarioPath,
           scenarioTimeout: phase.scenarioTimeout,
         });
 

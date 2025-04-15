@@ -11,6 +11,7 @@ import path from 'path';
 import { Worker } from 'node:worker_threads';
 import EventEmitter from 'node:events';
 import { calculatePercentiles, Performance } from '../utils';
+import { pathToFileURL } from 'node:url';
 
 export class TaskManager extends EventEmitter {
   private performance = new Performance();
@@ -66,7 +67,8 @@ export class TaskManager extends EventEmitter {
         (i + 1) * finalClientsPerThread + starterGap,
       );
 
-      const scenarioStr = this.phase.scenario.toString();
+      const resolved = path.resolve(this.phase.scenarioPath);
+      const scenarioPath = pathToFileURL(resolved).href;
 
       const worker = new Worker(path.join(__dirname, 'test-runner.js'), {
         stdout: false,
@@ -75,7 +77,7 @@ export class TaskManager extends EventEmitter {
           phase: {
             starterInitializers,
             finalInitializers,
-            scenario: scenarioStr,
+            scenarioPath,
           },
         },
       });

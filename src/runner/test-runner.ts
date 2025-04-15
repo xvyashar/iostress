@@ -5,7 +5,12 @@ import { random, sleep } from '../utils';
 
 const {
   target,
-  phase: { starterInitializers, finalInitializers, scenario, scenarioTimeout },
+  phase: {
+    starterInitializers,
+    finalInitializers,
+    scenarioPath,
+    scenarioTimeout,
+  },
 } = workerData as {
   target: string;
   phase: SerializableStressPhase;
@@ -54,7 +59,7 @@ const runPhaseSlice = async () => {
     const client = new Client(
       {
         target,
-        scenario,
+        scenarioPath,
         scenarioTimeout,
       },
       initializer,

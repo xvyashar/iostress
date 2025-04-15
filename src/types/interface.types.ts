@@ -19,7 +19,7 @@ export interface IOStressOptions {
  * @property {number} minClients - Minimum number of concurrent clients to run
  * @property {number} [maxClients] - Optional maximum number of concurrent clients
  * @property {StressScenarioInitializer} [scenarioInitializer] - Optional function to initialize the socket connection
- * @property {StressScenario} scenario - The stress test scenario function to execute. You can freely use the socket object to listen, and emit events.
+ * @property {string} scenarioPath - The js file that exports stress test scenario function to execute
  * @property {number} [scenarioTimeout] - Optional timeout in milliseconds for the scenario
  */
 export interface StressPhase {
@@ -27,7 +27,7 @@ export interface StressPhase {
   minClients: number;
   maxClients?: number;
   scenarioInitializer?: StressScenarioInitializer;
-  scenario: StressScenario;
+  scenarioPath: string;
   scenarioTimeout?: number;
 }
 

@@ -4,6 +4,8 @@ import { Performance } from '../utils';
 import { isPromise } from 'node:util/types';
 import EventEmitter from 'node:events';
 import { Logger } from './logger';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export class Client extends EventEmitter {
   private socket: Socket;
@@ -128,11 +130,12 @@ export class Client extends EventEmitter {
     });
   }
 
-  runTest() {
+  async runTest() {
     let timeout: NodeJS.Timeout | undefined;
 
     try {
-      const fn = eval(this.options.scenario) as StressScenario;
+      const fn = (await import(this.options.scenarioPath))
+        .default as StressScenario;
 
       if (this.options.scenarioTimeout) {
         timeout = setTimeout(() => {

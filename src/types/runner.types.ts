@@ -15,14 +15,14 @@ export interface SerializableStressPhase {
   name: string;
   starterInitializers: Partial<ManagerOptions & SocketOptions>[];
   finalInitializers: Partial<ManagerOptions & SocketOptions>[];
-  scenario: string;
+  scenarioPath: string;
   scenarioTimeout?: number;
 }
 
 export interface ClientOptions {
   target: string;
   scenarioTimeout?: number;
-  scenario: string;
+  scenarioPath: string;
 }
 
 export interface ClientReport {
