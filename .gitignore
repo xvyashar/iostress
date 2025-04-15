@@ -8,6 +8,6 @@
 /test/*.error.log
 /test/*.info.log
 
-/test/*-report.json
+/test/*.report.json
 
 .DS_Store

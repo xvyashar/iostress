@@ -12,10 +12,15 @@ import fs from 'fs';
 import { inspect } from 'util';
 
 export class IOStress {
-  constructor(private readonly options: IOStressOptions) {}
+  private version: string;
+  constructor(private readonly options: IOStressOptions) {
+    this.version = JSON.parse(
+      fs.readFileSync(`${__dirname}/../package.json`, 'utf8'),
+    ).version;
+  }
 
   async run() {
-    console.log('🚀 ' + kleur.bold('Starting stress test...'));
+    console.log('🚀 ' + kleur.bold(`IO Stress v${this.version}`));
 
     for (const phase of this.options.phases) {
       await this.testPhase(phase);
@@ -76,7 +81,7 @@ export class IOStress {
             workerErrors: Record<number, any[]>;
           }) => {
             fs.writeFile(
-              `${process.cwd()}/${phase.name}-report.json`,
+              `${process.cwd()}/${phase.name.toLowerCase()}-phase.report.json`,
               JSON.stringify(report, null, 2),
               (error) => {
                 if (error) {
@@ -86,7 +91,15 @@ export class IOStress {
                   return;
                 }
 
-                testingSpinner.success('Phase finished!');
+                testingSpinner.success('Finished!');
+
+                console.log(
+                  kleur.gray(
+                    `Phase test report saved at: ${kleur.cyan(
+                      `./${phase.name.toLowerCase()}-phase.report.json`,
+                    )}`,
+                  ),
+                );
 
                 if (Object.keys(workerErrors).length) {
                   console.log(kleur.red('Workers errors:'));
