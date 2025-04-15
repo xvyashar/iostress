@@ -8,6 +8,9 @@ const stressTest = new IOStress({
       name: 'Test',
       minClients: 10,
       maxClients: 100,
+      scenarioInitializer: (clientNumber) => {
+        return { extraHeaders: { token: clientNumber } };
+      },
       scenarioPath: path.join(__dirname, 'scenario.js'),
       scenarioTimeout: 20000,
     },

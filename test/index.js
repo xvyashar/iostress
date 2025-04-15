@@ -1,21 +1,21 @@
-const { createServer } = require("http");
-const { Server } = require("socket.io");
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: "*"
-  }
+    origin: '*',
+  },
 });
 
-io.on("connection", (socket) => {
-  console.log('Client connected');
+io.on('connection', (socket) => {
+  console.log(`Client ${socket.handshake.headers.token} connected`);
 
-  socket.on("ping", (callback) => {
-    callback("pong");
+  socket.on('ping', (callback) => {
+    callback('pong');
   });
 
-  socket.on("disconnect", () => {
+  socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
 });
