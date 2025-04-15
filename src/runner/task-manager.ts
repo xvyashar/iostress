@@ -90,7 +90,7 @@ export class TaskManager extends EventEmitter {
 
       worker.on('message', (message) => {
         if (message.event === 'status') {
-          this.workersStatus[worker.threadId] = message.data;
+          this.workersStatus[worker.threadId].clientStatus = message.data;
           this.clientsStatus = this.reCalculateClientsStatus();
 
           this.emit('status', this.clientsStatus);

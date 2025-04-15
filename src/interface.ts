@@ -5,7 +5,7 @@ import {
   StressReport,
 } from './types';
 import kleur from 'kleur';
-import ora from 'ora';
+import { createSpinner } from 'nanospinner';
 import { ManagerOptions, SocketOptions } from 'socket.io-client';
 import { TaskManager } from './runner/task-manager';
 import fs from 'fs';
@@ -28,16 +28,16 @@ export class IOStress {
         console.log(`---------------------------------------------`);
         console.log(`Testing phase: ${kleur.green(phase.name)}...`);
 
-        const phaseBuildSpinner = ora(
+        const phaseBuildSpinner = createSpinner(
           '🛠️ Building phase initializers...',
         ).start();
         const initializers = await this.buildPhaseInitializers(phase).catch(
           (error) => {
-            phaseBuildSpinner.fail('🛠️ Failed to build phase initializers!');
+            phaseBuildSpinner.error('🛠️ Failed to build phase initializers!');
             throw error;
           },
         );
-        phaseBuildSpinner.succeed('🛠️ Phase initializers built');
+        phaseBuildSpinner.success('🛠️ Phase initializers built');
 
         const taskManager = new TaskManager(this.options.target, {
           name: phase.name,
@@ -48,19 +48,21 @@ export class IOStress {
           scenarioTimeout: phase.scenarioTimeout,
         });
 
-        const testingSpinner = ora('💥 Running test...').start();
+        const testingSpinner = createSpinner('💥 Running test...').start();
 
         taskManager.on(
           'status',
           ({ readyClients, runningClients, finishedClients }: ClientStatus) => {
-            testingSpinner.text = `💥 Running test...\n${kleur.gray(
-              `  - [${readyClients}] ready clients\n  - [${runningClients}] running clients\n  - [${finishedClients}] finished clients`,
-            )}`;
+            testingSpinner.update(
+              `💥 Running test...\n${kleur.gray(
+                `  - [${readyClients}] ready clients\n  - [${runningClients}] running clients\n  - [${finishedClients}] finished clients`,
+              )}`,
+            );
           },
         );
 
         taskManager.on('gathering', () => {
-          testingSpinner.text = '🔄️ Generating report...';
+          testingSpinner.update('🔄️ Generating report...');
         });
 
         taskManager.on(
@@ -77,13 +79,13 @@ export class IOStress {
               JSON.stringify(report, null, 2),
               (error) => {
                 if (error) {
-                  testingSpinner.fail('❌ Failed to write report file!');
+                  testingSpinner.error('❌ Failed to write report file!');
                   console.error(error);
                   resolve();
                   return;
                 }
 
-                testingSpinner.succeed('✅ Phase finished!');
+                testingSpinner.success('✅ Phase finished!');
 
                 if (Object.keys(workerErrors).length) {
                   console.log(kleur.red('❌ Workers errors:'));
