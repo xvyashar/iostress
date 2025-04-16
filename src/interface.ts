@@ -110,7 +110,9 @@ export class IOStress {
             workerErrors: Record<number, any[]>;
           }) => {
             fs.writeFile(
-              `${process.cwd()}/${phase.name.toLowerCase()}-phase.report.json`,
+              `${process.cwd()}/${phase.name
+                .toLowerCase()
+                .replaceAll(' ', '-')}-phase.report.json`,
               JSON.stringify(report, null, 2),
               (error) => {
                 if (error) {
@@ -125,7 +127,9 @@ export class IOStress {
                 console.log(
                   kleur.gray(
                     `Phase test report saved at: ${kleur.cyan(
-                      `./${phase.name.toLowerCase()}-phase.report.json`,
+                      `./${phase.name
+                        .toLowerCase()
+                        .replaceAll(' ', '-')}-phase.report.json`,
                     )}`,
                   ),
                 );

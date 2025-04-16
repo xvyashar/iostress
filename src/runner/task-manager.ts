@@ -164,6 +164,10 @@ export class TaskManager extends EventEmitter {
       }
     }
 
+    process.stdin.setRawMode(false);
+    process.stdin.removeAllListeners('data');
+    process.stdin.pause();
+
     this.emit('gathering');
 
     const finalReport: StressReport = {
