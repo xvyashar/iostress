@@ -24,6 +24,7 @@ export class TaskManager extends EventEmitter {
       workerStatus: 'running' | 'finished';
       clientStatus: ClientStatus;
       report?: RunnerReport;
+      terminator: () => void;
     }
   > = {};
 
@@ -93,6 +94,11 @@ export class TaskManager extends EventEmitter {
           runningClients: 0,
           finishedClients: 0,
         },
+        terminator: () => {
+          worker.postMessage({
+            event: 'SIGTERM',
+          });
+        },
       };
 
       worker.on('message', (message) => {
@@ -104,6 +110,8 @@ export class TaskManager extends EventEmitter {
         } else if (message.event === 'finished') {
           this.workersStatus[worker.threadId].workerStatus = 'finished';
           this.workersStatus[worker.threadId].report = message.report;
+
+          this.handleReport();
         }
       });
 
@@ -117,10 +125,20 @@ export class TaskManager extends EventEmitter {
             new Error(`Worker stopped with exit code ${code}`),
           );
         }
-
-        this.handleReport();
       });
     }
+
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+
+    process.stdin.on('data', (key) => {
+      if (key.toString() === 't') {
+        this.sendSIGTERM();
+      } else if (key.toString() === '\u0003') {
+        process.exit(0);
+      }
+    });
   }
 
   private reCalculateClientsStatus() {
@@ -252,5 +270,11 @@ export class TaskManager extends EventEmitter {
       report: finalReport,
       workerErrors: this.workerErrors,
     });
+  }
+
+  private sendSIGTERM() {
+    for (const { terminator } of Object.values(this.workersStatus)) {
+      terminator();
+    }
   }
 }

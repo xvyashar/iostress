@@ -45,6 +45,8 @@ let readyClients = 0;
 let runningClients = 0;
 let finishedClients = 0;
 
+const terminators: (() => void)[] = [];
+
 const runPhaseSlice = async () => {
   let lazy = false;
 
@@ -131,8 +133,18 @@ const runPhaseSlice = async () => {
       }
     });
 
+    terminators.push(() => {
+      client.emit('SIGTERM');
+    });
+
     client.runTest();
   }
+
+  parentPort?.on('message', (message) => {
+    if (message.event === 'SIGTERM') {
+      terminators.forEach((terminator) => terminator());
+    }
+  });
 };
 
 runPhaseSlice();

@@ -128,6 +128,10 @@ export class Client extends EventEmitter {
         this.emit('finished', this.report);
       }
     });
+
+    this.on('SIGTERM', () => {
+      this.socket.disconnect();
+    });
   }
 
   async runTest() {
