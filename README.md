@@ -2,45 +2,47 @@
 
 🚀 Blast your Socket.IO server with this quick and powerful JavaScript testing tool!
 
-> [!WARNING]
-> Unstable! Don't use in production stage.
+> ⚠️ **WARNING:** This tool is **unstable**. Do not use in production environments.
 
-## Mission
+## 🎯 Mission
 
-- Flexible and Easy to Use API
-- Lightweight
-- Socket.IO specific stress test library
-- Covers complex scenarios
-- Accurate statistics
+- 🧩 Flexible and easy-to-use API
+- 💡 Lightweight
+- 🔌 Socket.IO-specific stress testing
+- 🧠 Covers complex real-world scenarios
+- 📊 Accurate performance and error statistics
 
-## Installation
+## 📦 Installation
 
 ```bash
-$ npm install iostress
+npm install iostress
 ```
 
 ```bash
-$ pnpm add iostress
+pnpm add iostress
 ```
 
 ```bash
-$ yarn add iostress
+yarn add iostress
 ```
 
-## Get Started
+## 🚀 Get Started
 
-iostress separates test config and scenarios logics. So you usually end up with this kind of folder structure:
+Organize your stress tests with separate configuration and scenario logic.
 
-```plain
+```bash
 tests/
 ├── test.js
 ├── low-pressure.scenario.js
 └── high-pressure.scenario.js
 ```
 
-You're configuration (`test.js`) file may look like this:
+### Example: `test.js`
 
-```javascript
+```js
+const { IOStress } = require('iostress');
+const { join } = require('path');
+
 const stressTest = new IOStress({
   target: 'http://localhost:3000',
   phases: [
@@ -49,9 +51,9 @@ const stressTest = new IOStress({
       minClients: 10,
       maxClients: 100,
       rampDelayRate: 500,
-      scenarioInitializer: (clientNumber) => {
-        return { extraHeaders: { token: clientNumber } };
-      },
+      scenarioInitializer: (clientNumber) => ({
+        extraHeaders: { token: clientNumber },
+      }),
       scenarioPath: join(__dirname, 'low-pressure.scenario.js'),
       scenarioTimeout: 20000,
     },
@@ -60,9 +62,9 @@ const stressTest = new IOStress({
       minClients: 100,
       maxClients: 1000,
       rampDelayRate: 100,
-      scenarioInitializer: (clientNumber) => {
-        return { extraHeaders: { token: clientNumber } };
-      },
+      scenarioInitializer: (clientNumber) => ({
+        extraHeaders: { token: clientNumber },
+      }),
       scenarioPath: join(__dirname, 'high-pressure.scenario.js'),
     },
   ],
@@ -71,9 +73,9 @@ const stressTest = new IOStress({
 stressTest.run();
 ```
 
-And this is how your scenario file may look like:
+### Example: `low-pressure.scenario.js`
 
-```javascript
+```js
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const scenario = async (socket, logger) => {
@@ -83,7 +85,7 @@ const scenario = async (socket, logger) => {
       logger.log(`Received: ${data}`);
       if (i === 99) {
         setTimeout(() => {
-          socket.disconnect(); // announce iostress, scenario execution finished
+          socket.disconnect(); // signal scenario completion
         }, 1000);
       }
     });
@@ -91,113 +93,92 @@ const scenario = async (socket, logger) => {
 };
 
 export default scenario;
-// if you're using cjs: module.exports = scenario;
+// CommonJS: module.exports = scenario;
 ```
 
-## How to Use
+## ⚙️ How to Use
 
-### Configuration
+### IOStress Configuration
 
-iostress exports a single class `IOStress` to configure your stress test behavior:
-
-```typescript
-interface IOStressInterface {
-  new (options: IOStressOptions): IOStress;
-
-  run: () => Promise<void>;
-}
-```
-
-```typescript
+```ts
 interface IOStressOptions {
-  target: string; // target url
+  target: string;
   phases: StressPhase[];
 }
 
 interface StressPhase {
-  name: string; // phase name
-  minClients: number; // arrival clients
-  maxClients?: number; // will gradually continue instantiating after min clients started their scenario flow.
-  rampDelayRate?: number; // configure speed of gradual clients. default: 100 (bigger = slower)
-  scenarioInitializer?: StressScenarioInitializer; // a function that returns io client options. provided to authorize clients if needed.
-  scenarioPath: string; // absolute of scenario file.
-  scenarioTimeout?: number; // each client lifetime. default: no timeout.
-}
-
-type StressScenarioInitializer = (
-  clientNumber: number, // starts from 0
-) => Partial<ManagerOptions & SocketOptions>;
-```
-
-### Scenario
-
-You're scenario files should export a function with this interface:
-
-```typescript
-type StressScenario = (
-  socket: Socket, // connected io client
-  logger: ILogger, // console.log won't work while executing scenario, use logger instead. You're logs will be saved to multiple files.
-) => void | Promise<void>;
-
-export interface ILogger {
-  log: (message: string, type?: string) => void;
-  error: (message: string | Error, type?: string) => void;
-  warn: (message: string, type?: string) => void;
-  debug: (message: string, type?: string) => void;
+  name: string;
+  minClients: number;
+  maxClients?: number;
+  rampDelayRate?: number;
+  scenarioInitializer?: (
+    clientNumber: number,
+  ) => Partial<ManagerOptions & SocketOptions>;
+  scenarioPath: string;
+  scenarioTimeout?: number;
 }
 ```
 
-> [!WARNING]
-> You're function has to call `socket.disconnect()` when your scenario execution is finished, otherwise iostress will wait for it all the time.
+### Scenario Interface
 
-> [!NOTE]
->
-> - You can also terminate your phase scenario gracefully by pressing `t` key, and iostress will terminate all clients, and generate your report.
-> - `Ctrl + C` will terminate all clients and iostress ungracefully.
+```ts
+type StressScenario = (socket: Socket, logger: ILogger) => void | Promise<void>;
 
-## Report
+interface ILogger {
+  log(message: string, type?: string): void;
+  error(message: string | Error, type?: string): void;
+  warn(message: string, type?: string): void;
+  debug(message: string, type?: string): void;
+}
+```
 
-Each phase will generate its own report file, in your project root folder with this pattern: `phase-name.report.json`.
+> ⚠️ Your scenario **must** call `socket.disconnect()` at the end to prevent hanging clients.
 
-### Report Schema
+> 💡 Press `t` to gracefully terminate a phase. Use `Ctrl+C` for forceful exit.
 
-```typescript
+## 📈 Reports
+
+Each phase generates a report named `phase-name.report.json`.
+
+### Schema
+
+```ts
 interface StressReport {
-  phase: string; // phase name
-  testDuration: number; // phase duration in seconds
+  phase: string;
+  testDuration: number;
   connections: {
-    attempted: number; // total clients attempted to connect
-    successful: number; // successful connections
-    failed: number; // failed connections
-    averageConnectionTime: number; // average connection time in ms
-    reconnectAttempts: number; // total reconnect attempts
+    attempted: number;
+    successful: number;
+    failed: number;
+    averageConnectionTime: number;
+    reconnectAttempts: number;
   };
   events: {
-    sent: number; // total events sent
-    received: number; // total events received
-    successful: number; // successful events (if provided acknowledgement function)
-    failed: number; // failed events (if provided acknowledgement function)
-    throughput: number; // events per second
+    sent: number;
+    received: number;
+    successful: number;
+    failed: number;
+    throughput: number;
   };
   latency: {
-    average: number; // average latency in ms
-    min: number; // min latency in ms
-    max: number; // max latency in ms
-    p50: number; // 50th percentile latency in ms
-    p85: number; // 85th percentile latency in ms
-    p95: number; // 95th percentile latency in ms
-    p99: number; // 99th percentile latency in ms
+    average: number;
+    min: number;
+    max: number;
+    p50: number;
+    p85: number;
+    p95: number;
+    p99: number;
   };
   errors: {
-    total: number; // total errors
-    byType: Record<string, number>; // errors count by defined types
+    total: number;
+    byType: Record<string, number>;
   };
 }
 ```
 
-## License
+## 📄 License
 
-```plain
+```text
 MIT License
 
 Copyright (c) 2025 Yashar
