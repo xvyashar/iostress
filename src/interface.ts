@@ -25,7 +25,7 @@ export class IOStress {
     }
   }
 
-  validateOptions() {
+  private validateOptions() {
     const schema = v.object({
       target: v.pipe(v.string(), v.url()),
       phases: v.array(

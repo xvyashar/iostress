@@ -45,6 +45,8 @@ export type StressScenarioInitializer = (
 /**
  * A stress test scenario function that executes socket operations
  * @param {Socket} socket - The initialized Socket.io client connection
+ * @param {ILogger} logger - console.log won't work while executing scenario, use logger instead
+ * @returns {void | Promise<void>}
  */
 export type StressScenario = (
   socket: Socket,
