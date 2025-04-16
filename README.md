@@ -1,48 +1,47 @@
-# iostress
+# iostress ![version](https://img.shields.io/badge/version-0.0.1-blue)
 
 🚀 Blast your Socket.IO server with this quick and powerful JavaScript testing tool!
 
-> ⚠️ **WARNING:** This tool is **unstable**. Do not use in production environments.
+> [!WARNING] > **Unstable!** Don't use in production stage.
 
-## 🎯 Mission
+---
 
-- 🧩 Flexible and easy-to-use API
-- 💡 Lightweight
-- 🔌 Socket.IO-specific stress testing
-- 🧠 Covers complex real-world scenarios
-- 📊 Accurate performance and error statistics
+## 🌟 Features
+
+- Flexible and easy-to-use API
+- Lightweight
+- Socket.IO specific stress testing library
+- Covers complex scenarios
+- Accurate statistics and reporting
+
+---
 
 ## 📦 Installation
 
 ```bash
 npm install iostress
-```
-
-```bash
+# or
 pnpm add iostress
-```
-
-```bash
+# or
 yarn add iostress
 ```
 
-## 🚀 Get Started
+---
 
-Organize your stress tests with separate configuration and scenario logic.
+## 🚀 Getting Started
 
-```bash
+iostress separates the test configuration from scenario logic. Your typical project structure may look like this:
+
+```
 tests/
 ├── test.js
 ├── low-pressure.scenario.js
 └── high-pressure.scenario.js
 ```
 
-### Example: `test.js`
+### Example: Configuration (`test.js`)
 
 ```js
-const { IOStress } = require('iostress');
-const { join } = require('path');
-
 const stressTest = new IOStress({
   target: 'http://localhost:3000',
   phases: [
@@ -73,7 +72,7 @@ const stressTest = new IOStress({
 stressTest.run();
 ```
 
-### Example: `low-pressure.scenario.js`
+### Example: Scenario (`low-pressure.scenario.js`)
 
 ```js
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -84,73 +83,87 @@ const scenario = async (socket, logger) => {
     socket.emit('ping', (data) => {
       logger.log(`Received: ${data}`);
       if (i === 99) {
-        setTimeout(() => {
-          socket.disconnect(); // signal scenario completion
-        }, 1000);
+        setTimeout(() => socket.disconnect(), 1000); // signal scenario complete
       }
     });
   }
 };
 
 export default scenario;
-// CommonJS: module.exports = scenario;
+// If using CommonJS: module.exports = scenario;
 ```
 
-## ⚙️ How to Use
+---
 
-### IOStress Configuration
+## ⚙️ Configuration Options
+
+### `IOStress(options)`
+
+Create an instance of the stress tester.
+
+**Options:**
+
+| Name     | Type            | Required | Description         |
+| -------- | --------------- | -------- | ------------------- |
+| `target` | `string`        | ✅       | The target URL      |
+| `phases` | `StressPhase[]` | ✅       | List of test phases |
+
+### `StressPhase` Object
+
+| Name                  | Type                                      | Required | Description                      |
+| --------------------- | ----------------------------------------- | -------- | -------------------------------- |
+| `name`                | `string`                                  | ✅       | Name of the test phase           |
+| `minClients`          | `number`                                  | ✅       | Initial number of clients        |
+| `maxClients`          | `number`                                  | ❌       | Maximum clients to scale to      |
+| `rampDelayRate`       | `number` (default: 100)                   | ❌       | Delay rate between client spawns |
+| `scenarioInitializer` | `(clientNumber: number) => ClientOptions` | ❌       | Customize client options         |
+| `scenarioPath`        | `string`                                  | ✅       | Absolute path to scenario file   |
+| `scenarioTimeout`     | `number`                                  | ❌       | Timeout per client (ms)          |
+
+---
+
+## 🎭 Writing Scenarios
+
+A scenario file must export a function like this:
 
 ```ts
-interface IOStressOptions {
-  target: string;
-  phases: StressPhase[];
-}
-
-interface StressPhase {
-  name: string;
-  minClients: number;
-  maxClients?: number;
-  rampDelayRate?: number;
-  scenarioInitializer?: (
-    clientNumber: number,
-  ) => Partial<ManagerOptions & SocketOptions>;
-  scenarioPath: string;
-  scenarioTimeout?: number;
-}
+(socket: Socket, logger: ILogger) => void | Promise<void>
 ```
 
-### Scenario Interface
+### `ILogger` Interface
 
-```ts
-type StressScenario = (socket: Socket, logger: ILogger) => void | Promise<void>;
+| Method  | Parameters                              | Description            |
+| ------- | --------------------------------------- | ---------------------- |
+| `log`   | `message: string, type?: string`        | Log a standard message |
+| `error` | `message: string\|Error, type?: string` | Log an error message   |
+| `warn`  | `message: string, type?: string`        | Log a warning message  |
+| `debug` | `message: string, type?: string`        | Log a debug message    |
 
-interface ILogger {
-  log(message: string, type?: string): void;
-  error(message: string | Error, type?: string): void;
-  warn(message: string, type?: string): void;
-  debug(message: string, type?: string): void;
-}
-```
+Use `logger` to output messages instead of `console.log`. Your logs are automatically stored in files.
 
-> ⚠️ Your scenario **must** call `socket.disconnect()` at the end to prevent hanging clients.
+> [!WARNING]
+> You **must** call `socket.disconnect()` at the end of the scenario, or it will hang indefinitely.
 
-> 💡 Press `t` to gracefully terminate a phase. Use `Ctrl+C` for forceful exit.
+> [!NOTE]
+> Press `t` during execution to gracefully terminate a phase and generate the report. Use `Ctrl+C` to terminate forcefully.
 
-## 📈 Reports
+---
 
-Each phase generates a report named `phase-name.report.json`.
+## 📊 Report
 
-### Schema
+Each phase generates a `.report.json` file in your root folder.
+
+### Example Schema
 
 ```ts
 interface StressReport {
   phase: string;
-  testDuration: number;
+  testDuration: number; // seconds
   connections: {
     attempted: number;
     successful: number;
     failed: number;
-    averageConnectionTime: number;
+    averageConnectionTime: number; // ms
     reconnectAttempts: number;
   };
   events: {
@@ -161,13 +174,13 @@ interface StressReport {
     throughput: number;
   };
   latency: {
-    average: number;
-    min: number;
-    max: number;
-    p50: number;
-    p85: number;
-    p95: number;
-    p99: number;
+    average: number; // ms
+    min: number; // ms
+    max: number; // ms
+    p50: number; // ms
+    p85: number; // ms
+    p95: number; // ms
+    p99: number; // ms
   };
   errors: {
     total: number;
@@ -175,6 +188,8 @@ interface StressReport {
   };
 }
 ```
+
+---
 
 ## 📄 License
 
