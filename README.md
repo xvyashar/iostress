@@ -2,7 +2,8 @@
 
 🚀 Blast your Socket.IO server with this quick and powerful JavaScript testing tool!
 
-> [!WARNING] > **Unstable!** Don't use in production stage.
+> [!WARNING]
+> Unstable! Don't use in production stage.
 
 ---
 
