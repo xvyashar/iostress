@@ -4,8 +4,6 @@ import { Performance } from '../utils';
 import { isPromise } from 'node:util/types';
 import EventEmitter from 'node:events';
 import { Logger } from './logger';
-import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 export class Client extends EventEmitter {
   private socket: Socket;
@@ -109,7 +107,33 @@ export class Client extends EventEmitter {
         };
       }
 
-      return originalEmit(ev, ...args);
+      try {
+        const result = originalEmit(ev, ...args);
+
+        if (typeof lastArg !== 'function') {
+          const latency = this.performance.measure(emitTimer); //? measure latency
+          this.report.events.latencyFrames.push(latency);
+          this.report.events.successful++; //? successful ack
+        }
+
+        return result;
+      } catch (error) {
+        this.report.events.failed++; //? failed ack
+        this.logger.error(error as Error, 'Business');
+        throw error;
+      }
+    };
+
+    this.socket.emitWithAck = (ev: any, ...args: any[]) => {
+      return new Promise((resolve, reject) => {
+        try {
+          this.socket.emit(ev, ...args, (result: any) => {
+            resolve(result);
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
     };
 
     this.socket.onAnyOutgoing(() => {
