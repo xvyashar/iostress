@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "socket.io": "^4.8.1",
-    "iostress": "file:../dist"
+    "iostress": "^0.0.1",
+    "socket.io": "^4.8.1"
   }
 }
