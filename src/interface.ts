@@ -10,21 +10,50 @@ import { ManagerOptions, SocketOptions } from 'socket.io-client';
 import { TaskManager } from './runner/task-manager';
 import fs from 'fs';
 import { inspect } from 'util';
+import * as v from 'valibot';
 
 export class IOStress {
-  private version: string;
   constructor(private readonly options: IOStressOptions) {
-    this.version = JSON.parse(
-      fs.readFileSync(`${__dirname}/../package.json`, 'utf8'),
-    ).version;
+    this.validateOptions();
   }
 
   async run() {
-    console.log('🚀 ' + kleur.bold(`IO Stress v${this.version}`));
+    console.log('🚀 ' + kleur.bold(`IO Stress v${__VERSION__}`));
 
     for (const phase of this.options.phases) {
       await this.testPhase(phase);
     }
+  }
+
+  validateOptions() {
+    const schema = v.object({
+      target: v.pipe(v.string(), v.url()),
+      phases: v.array(
+        v.pipe(
+          v.object({
+            name: v.string(),
+            minClients: v.pipe(v.number(), v.minValue(1)),
+            maxClients: v.optional(v.pipe(v.number(), v.minValue(1))),
+            rampDelayRate: v.optional(v.pipe(v.number(), v.minValue(100))),
+            scenarioInitializer: v.optional(v.function()),
+            scenarioPath: v.string(),
+            scenarioTimeout: v.optional(v.pipe(v.number(), v.minValue(1000))),
+          }),
+          v.custom((value: any) => {
+            if (
+              !value.maxClients ||
+              (value.maxClients && value.maxClients > value.minClients)
+            ) {
+              return true;
+            } else {
+              throw new Error('Max clients must be greater than min clients!');
+            }
+          }),
+        ),
+      ),
+    });
+
+    v.parse(schema, this.options);
   }
 
   private testPhase(phase: StressPhase) {

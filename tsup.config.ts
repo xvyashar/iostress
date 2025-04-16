@@ -1,4 +1,8 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { defineConfig } from 'tsup';
+
+const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
 
 export default defineConfig([
   {
@@ -8,6 +12,9 @@ export default defineConfig([
     shims: true,
     skipNodeModulesBundle: true,
     clean: true,
+    define: {
+      __VERSION__: `"${pkg.version}"`,
+    },
   },
   {
     format: ['cjs', 'esm'],
