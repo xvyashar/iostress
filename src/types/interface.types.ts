@@ -40,7 +40,9 @@ export interface StressPhase {
  */
 export type StressScenarioInitializer = (
   clientNumber: number,
-) => Partial<ManagerOptions & SocketOptions>;
+) =>
+  | Partial<ManagerOptions & SocketOptions>
+  | Promise<Partial<ManagerOptions & SocketOptions>>;
 
 /**
  * A stress test scenario function that executes socket operations

@@ -11,6 +11,7 @@ import { TaskManager } from './runner/task-manager';
 import fs from 'fs';
 import { inspect } from 'util';
 import * as v from 'valibot';
+import { isPromise } from 'util/types';
 
 export class IOStress {
   constructor(private readonly options: IOStressOptions) {
@@ -158,7 +159,7 @@ export class IOStress {
 
     for (let i = 0; i < (maxClients ?? minClients); i++) {
       if (scenarioInitializer) {
-        initializers.push(scenarioInitializer(i));
+        initializers.push(await scenarioInitializer(i));
       } else {
         initializers.push({});
       }
