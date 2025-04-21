@@ -154,7 +154,17 @@ export class Client extends EventEmitter {
     });
 
     this.on('SIGTERM', () => {
-      this.socket.disconnect();
+      if (this.socket.connected) {
+        this.socket.disconnect();
+      } else {
+        this.socket.off();
+        this.socket.offAny();
+        this.socket.offAnyOutgoing();
+        this.socket.disconnect();
+        this.socket.close();
+
+        this.emit('finished', this.report);
+      }
     });
   }
 

@@ -69,6 +69,8 @@ export class TaskManager extends EventEmitter {
         (i + 1) * finalClientsPerThread + starterGap,
       );
 
+      if (!starterInitializers.length && !finalInitializers.length) continue;
+
       const resolved = path.resolve(this.phase.scenarioPath);
       const scenarioPath = pathToFileURL(resolved).href;
 

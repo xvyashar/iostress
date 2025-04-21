@@ -1,4 +1,4 @@
-# iostress ![version](https://img.shields.io/badge/version-0.0.2-blue)
+# iostress ![version](https://img.shields.io/badge/version-0.0.3-blue)
 
 🚀 Blast your Socket.IO server with this quick and powerful JavaScript testing tool!
 
