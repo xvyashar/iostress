@@ -11,7 +11,7 @@ import { TaskManager } from './runner/task-manager';
 import fs from 'fs';
 import { inspect } from 'util';
 import * as v from 'valibot';
-import { isPromise } from 'util/types';
+import { join } from 'path';
 
 export class IOStress {
   constructor(private readonly options: IOStressOptions) {
@@ -39,6 +39,8 @@ export class IOStress {
             scenarioInitializer: v.optional(v.function()),
             scenarioPath: v.string(),
             scenarioTimeout: v.optional(v.pipe(v.number(), v.minValue(1000))),
+            reportsPath: v.optional(v.string()),
+            logsPath: v.optional(v.string()),
           }),
           v.custom((value: any) => {
             if (
@@ -82,6 +84,7 @@ export class IOStress {
           initializers,
           scenarioPath: phase.scenarioPath,
           scenarioTimeout: phase.scenarioTimeout,
+          logsPath: phase.logsPath,
         });
 
         const testingSpinner = createSpinner('Running test...').start();
@@ -110,10 +113,22 @@ export class IOStress {
             report: StressReport;
             workerErrors: Record<number, any[]>;
           }) => {
-            fs.writeFile(
-              `${process.cwd()}/${phase.name
+            const reportsDir =
+              phase.reportsPath ?? join(process.cwd(), 'iostress-reports');
+
+            if (!fs.existsSync(reportsDir)) {
+              fs.mkdirSync(reportsDir, { recursive: true });
+            }
+
+            const reportsPath = join(
+              reportsDir,
+              `${phase.name
                 .toLowerCase()
                 .replaceAll(' ', '-')}-phase.report.json`,
+            );
+
+            fs.writeFile(
+              reportsPath,
               JSON.stringify(report, null, 2),
               (error) => {
                 if (error) {
@@ -127,11 +142,7 @@ export class IOStress {
 
                 console.log(
                   kleur.gray(
-                    `Phase test report saved at: ${kleur.cyan(
-                      `./${phase.name
-                        .toLowerCase()
-                        .replaceAll(' ', '-')}-phase.report.json`,
-                    )}`,
+                    `Phase test report saved at: ${kleur.cyan(reportsPath)}`,
                   ),
                 );
 

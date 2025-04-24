@@ -11,6 +11,7 @@ const {
     rampDelayRate,
     scenarioPath,
     scenarioTimeout,
+    logsPath,
   },
 } = workerData as {
   target: string;
@@ -64,6 +65,7 @@ const runPhaseSlice = async () => {
         target,
         scenarioPath,
         scenarioTimeout,
+        logsPath,
       },
       initializer,
     );

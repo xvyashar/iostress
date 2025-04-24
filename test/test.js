@@ -13,6 +13,8 @@ const stressTest = new IOStress({
       },
       scenarioPath: path.join(__dirname, 'scenario.js'),
       scenarioTimeout: 20000,
+      reportsPath: path.join(__dirname, 'stress-reports'),
+      logsPath: path.join(__dirname, 'stress-logs'),
     },
     {
       name: 'Test 2',
@@ -22,6 +24,8 @@ const stressTest = new IOStress({
         return { extraHeaders: { token: clientNumber } };
       },
       scenarioPath: path.join(__dirname, 'scenario.js'),
+      reportsPath: path.join(__dirname, 'stress-reports'),
+      logsPath: path.join(__dirname, 'stress-logs'),
     },
   ],
 });

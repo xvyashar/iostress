@@ -85,6 +85,7 @@ export class TaskManager extends EventEmitter {
             rampDelayRate: this.phase.rampDelayRate,
             scenarioPath,
             scenarioTimeout: this.phase.scenarioTimeout,
+            logsPath: this.phase.logsPath,
           } as SerializableStressPhase,
         },
       });

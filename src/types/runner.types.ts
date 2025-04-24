@@ -18,12 +18,14 @@ export interface SerializableStressPhase {
   rampDelayRate?: number;
   scenarioPath: string;
   scenarioTimeout?: number;
+  logsPath?: string;
 }
 
 export interface ClientOptions {
   target: string;
   scenarioTimeout?: number;
   scenarioPath: string;
+  logsPath?: string;
 }
 
 export interface ClientReport {

@@ -22,6 +22,8 @@ export interface IOStressOptions {
  * @property {StressScenarioInitializer} [scenarioInitializer] - Optional function to initialize the socket connection
  * @property {string} scenarioPath - The js file that exports stress test scenario function to execute
  * @property {number} [scenarioTimeout] - Optional timeout in milliseconds for the scenario
+ * @property {string} [reportsPath] - Optional reports directory path. default: current process cwd
+ * @property {string} [logsPath] - Optional path for logs directory. default: current process cwd
  */
 export interface StressPhase {
   name: string;
@@ -31,6 +33,8 @@ export interface StressPhase {
   scenarioInitializer?: StressScenarioInitializer;
   scenarioPath: string;
   scenarioTimeout?: number;
+  reportsPath?: string;
+  logsPath?: string;
 }
 
 /**

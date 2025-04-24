@@ -4,10 +4,8 @@
 
 # Test Dir
 /test/node_modules
-/test/*.combined.log
-/test/*.error.log
-/test/*.info.log
+/test/**/*.log
 
-/test/*.report.json
+/test/**/*.report.json
 
 .DS_Store

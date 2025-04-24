@@ -28,13 +28,15 @@ export class Client extends EventEmitter {
     },
   };
   private performance: Performance = new Performance();
-  private logger = new Logger();
+  private logger;
 
   constructor(
     private readonly options: ClientOptions,
     initializer: Partial<ManagerOptions & SocketOptions>,
   ) {
     super();
+
+    this.logger = new Logger(options.logsPath);
 
     this.logger.on('error', (type) => {
       this.report.errors.total++;

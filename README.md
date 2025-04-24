@@ -1,4 +1,4 @@
-# iostress ![version](https://img.shields.io/badge/version-0.0.3-blue)
+# iostress ![version](https://img.shields.io/badge/version-0.0.4-blue)
 
 🚀 Blast your Socket.IO server with this quick and powerful JavaScript testing tool!
 
@@ -20,11 +20,11 @@
 ## 📦 Installation
 
 ```bash
-npm install iostress
+npm install --save-dev iostress
 # or
-pnpm add iostress
+pnpm add -D iostress
 # or
-yarn add iostress
+yarn add -D iostress
 ```
 
 ---
@@ -56,6 +56,8 @@ const stressTest = new IOStress({
       }),
       scenarioPath: join(__dirname, 'low-pressure.scenario.js'),
       scenarioTimeout: 20000,
+      logsPath: path.join(__dirname, 'stress-logs'),
+      reportsPath: path.join(__dirname, 'stress-reports'),
     },
     {
       name: 'More Pressure',
@@ -66,6 +68,8 @@ const stressTest = new IOStress({
         extraHeaders: { token: clientNumber },
       }),
       scenarioPath: join(__dirname, 'high-pressure.scenario.js'),
+      logsPath: path.join(__dirname, 'stress-logs'),
+      reportsPath: path.join(__dirname, 'stress-reports'),
     },
   ],
 });
@@ -120,6 +124,8 @@ Create an instance of the stress tester.
 | `scenarioInitializer` | `(clientNumber: number) => ClientOptions` | ❌       | Customize client options         |
 | `scenarioPath`        | `string`                                  | ✅       | Absolute path to scenario file   |
 | `scenarioTimeout`     | `number`                                  | ❌       | Timeout per client (ms)          |
+| `reportsPath`         | `number`                                  | ❌       | Reports directory path           |
+| `logsPath`            | `string`                                  | ❌       | Logs directory path              |
 
 ---
 
@@ -152,7 +158,7 @@ Use `logger` to output messages instead of `console.log`. Your logs are automati
 
 ## 📊 Report
 
-Each phase generates a `.report.json` file in your root folder.
+Each phase generates a `{phase-name}.report.json` file in your root folder.
 
 ### Example Schema
 
