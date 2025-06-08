@@ -169,6 +169,8 @@ You can write your scenario files in TypeScript (.ts) — no manual setup requir
 
 ℹ️ Just point scenarioPath to your .ts file and you’re good to go!
 
+---
+
 ## 📊 Report
 
 Each phase generates a `{phase-name}.report.json` file in your root folder.
