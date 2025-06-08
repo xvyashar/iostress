@@ -1,4 +1,4 @@
-# iostress ![version](https://img.shields.io/badge/version-0.0.4-blue)
+# iostress ![version](https://img.shields.io/badge/version-0.1.0-blue)
 
 🚀 Blast your Socket.IO server with this quick and powerful JavaScript testing tool!
 
@@ -155,6 +155,19 @@ Use `logger` to output messages instead of `console.log`. Your logs are automati
 > Press `t` during execution to gracefully terminate a phase and generate the report. Use `Ctrl+C` to terminate forcefully.
 
 ---
+
+## ✅ TypeScript Support
+You can write your scenario files in TypeScript (.ts) — no manual setup required.
+
+- iostress automatically compiles .ts scenario files behind the scenes.
+
+- If your project has a tsconfig.json, its settings will be automatically applied.
+
+- If no tsconfig.json is found, a sensible default configuration will be used.
+
+- Declaration files are not emitted, and output is cleaned up after execution.
+
+ℹ️ Just point scenarioPath to your .ts file and you’re good to go!
 
 ## 📊 Report
 
