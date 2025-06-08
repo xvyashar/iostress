@@ -45,6 +45,20 @@ export class TaskManager extends EventEmitter {
     super();
   }
 
+  async validateScenario() {
+    const scenarioPath = pathToFileURL(this.phase.scenarioPath).href;
+    let fn = (await import(scenarioPath)).default;
+
+    if (typeof fn !== 'function') {
+      if (typeof fn.default !== 'function')
+        throw new Error(
+          `Scenario file must export a default function!\n  - esm: export default ...\n  - cjs: module.exports = ...;`,
+        );
+    }
+
+    return true;
+  }
+
   async run() {
     const threadsCount = availableParallelism();
     const starterClientsPerThread = Math.ceil(
@@ -71,8 +85,7 @@ export class TaskManager extends EventEmitter {
 
       if (!starterInitializers.length && !finalInitializers.length) continue;
 
-      const resolved = path.resolve(this.phase.scenarioPath);
-      const scenarioPath = pathToFileURL(resolved).href;
+      const scenarioPath = pathToFileURL(this.phase.scenarioPath).href;
 
       const worker = new Worker(path.join(__dirname, 'test-runner.js'), {
         stdout: false,

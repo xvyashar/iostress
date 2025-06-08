@@ -5,7 +5,7 @@ const stressTest = new IOStress({
   target: 'http://localhost:3000',
   phases: [
     {
-      name: 'Test 1',
+      name: 'JS Test',
       minClients: 10,
       maxClients: 100,
       scenarioInitializer: (clientNumber) => {
@@ -17,13 +17,13 @@ const stressTest = new IOStress({
       logsPath: path.join(__dirname, 'stress-logs'),
     },
     {
-      name: 'Test 2',
+      name: 'TS Test',
       minClients: 100,
       maxClients: 1000,
       scenarioInitializer: (clientNumber) => {
         return { extraHeaders: { token: clientNumber } };
       },
-      scenarioPath: path.join(__dirname, 'scenario.js'),
+      scenarioPath: path.join(__dirname, 'scenario.ts'),
       reportsPath: path.join(__dirname, 'stress-reports'),
       logsPath: path.join(__dirname, 'stress-logs'),
     },

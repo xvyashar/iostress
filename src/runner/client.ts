@@ -174,8 +174,8 @@ export class Client extends EventEmitter {
     let timeout: NodeJS.Timeout | undefined;
 
     try {
-      const fn = (await import(this.options.scenarioPath))
-        .default as StressScenario;
+      let fn = (await import(this.options.scenarioPath)).default;
+      if (typeof fn !== 'function') fn = fn.default;
 
       if (this.options.scenarioTimeout) {
         timeout = setTimeout(() => {
