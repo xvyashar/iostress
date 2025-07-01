@@ -132,14 +132,21 @@ export class TaskManager extends EventEmitter {
       });
 
       worker.on('error', (error) => {
-        this.workerErrors[worker.threadId].push(error);
+        if (this.workerErrors[worker.threadId])
+          this.workerErrors[worker.threadId].push(error);
+        else this.workerErrors[worker.threadId] = [error];
       });
 
       worker.on('exit', (code) => {
         if (code !== 0) {
-          this.workerErrors[worker.threadId].push(
-            new Error(`Worker stopped with exit code ${code}`),
-          );
+          if (this.workerErrors[worker.threadId])
+            this.workerErrors[worker.threadId].push(
+              new Error(`Worker stopped with exit code ${code}`),
+            );
+          else
+            this.workerErrors[worker.threadId] = [
+              new Error(`Worker stopped with exit code ${code}`),
+            ];
         }
       });
     }
