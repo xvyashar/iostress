@@ -23,7 +23,8 @@ export class IOStress {
     console.log('🚀 ' + kleur.bold(`IO Stress v${__VERSION__}`));
 
     for (const phase of this.options.phases) {
-      await this.testPhase(phase);
+      const aborted = await this.testPhase(phase);
+      if (aborted) break;
     }
   }
 
@@ -46,8 +47,7 @@ export class IOStress {
                   throw new Error('Scenario path not exists!');
                 }
 
-                const stat = fs.statSync(value);
-                if (!stat.isFile()) {
+                if (!fs.statSync(value).isFile()) {
                   throw new Error(`Scenario path is not a file: ${value}`);
                 }
 
@@ -62,6 +62,9 @@ export class IOStress {
               }),
             ),
             scenarioTimeout: v.optional(v.pipe(v.number(), v.minValue(1000))),
+            softTerminatorSignal: v.optional(v.pipe(v.string(), v.length(1))),
+            hardTerminatorSignal: v.optional(v.pipe(v.string(), v.length(1))),
+            terminator: v.optional(v.instance(AbortController)),
             reportsPath: v.optional(v.string()),
             logsPath: v.optional(v.string()),
           }),
@@ -83,7 +86,7 @@ export class IOStress {
   }
 
   private testPhase(phase: StressPhase) {
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<boolean>(async (resolve, reject) => {
       try {
         console.log(`---------------------------------------------`);
         console.log(`Testing phase: ${kleur.green(phase.name)}...`);
@@ -149,6 +152,9 @@ export class IOStress {
           initializers,
           scenarioPath: phase.scenarioPath,
           scenarioTimeout: phase.scenarioTimeout,
+          softTerminatorSignal: phase.softTerminatorSignal ?? 't',
+          hardTerminatorSignal: phase.hardTerminatorSignal ?? '\u0003',
+          terminator: phase.terminator,
           logsPath: phase.logsPath,
         });
 
@@ -170,6 +176,11 @@ export class IOStress {
             );
           },
         );
+
+        taskManager.on('hard-stopped', () => {
+          testingSpinner.error('Test has been aborted by user!');
+          resolve(true);
+        });
 
         taskManager.on('gathering', () => {
           testingSpinner.update('Generating report...');
@@ -205,7 +216,7 @@ export class IOStress {
                 if (error) {
                   testingSpinner.error('Failed to write report file!');
                   console.error(error);
-                  resolve();
+                  resolve(false);
                   return;
                 }
 
@@ -222,7 +233,7 @@ export class IOStress {
                   console.log(kleur.gray(inspect(workerErrors)));
                 }
 
-                resolve();
+                resolve(false);
               },
             );
           },

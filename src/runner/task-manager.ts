@@ -24,7 +24,8 @@ export class TaskManager extends EventEmitter {
       workerStatus: 'running' | 'finished';
       clientStatus: ClientStatus;
       report?: RunnerReport;
-      terminator: () => void;
+      softTerminator: () => void;
+      hardTerminator: () => Promise<number>;
     }
   > = {};
 
@@ -49,12 +50,10 @@ export class TaskManager extends EventEmitter {
     const scenarioPath = pathToFileURL(this.phase.scenarioPath).href;
     let fn = (await import(scenarioPath)).default;
 
-    if (typeof fn !== 'function') {
-      if (typeof fn.default !== 'function')
-        throw new Error(
-          `Scenario file must export a default function!\n  - esm: export default ...\n  - cjs: module.exports = ...;`,
-        );
-    }
+    if (typeof fn !== 'function' && typeof fn.default !== 'function')
+      throw new Error(
+        `Scenario file must export a default function!\n  - esm: export default ...\n  - cjs: module.exports = ...;`,
+      );
 
     return true;
   }
@@ -110,14 +109,17 @@ export class TaskManager extends EventEmitter {
           runningClients: 0,
           finishedClients: 0,
         },
-        terminator: () => {
+        softTerminator: () => {
           worker.postMessage({
             event: 'SIGTERM',
           });
         },
+        hardTerminator: () => {
+          return worker.terminate();
+        },
       };
 
-      worker.on('message', (message) => {
+      worker.on('message', async (message) => {
         if (message.event === 'status') {
           this.workersStatus[worker.threadId].clientStatus = message.data;
           this.clientsStatus = this.reCalculateClientsStatus();
@@ -127,7 +129,7 @@ export class TaskManager extends EventEmitter {
           this.workersStatus[worker.threadId].workerStatus = 'finished';
           this.workersStatus[worker.threadId].report = message.report;
 
-          this.handleReport();
+          return this.handleReport();
         }
       });
 
@@ -156,12 +158,22 @@ export class TaskManager extends EventEmitter {
     process.stdin.setEncoding('utf8');
 
     process.stdin.on('data', (key) => {
-      if (key.toString() === 't') {
+      if (key.toString() === this.phase.softTerminatorSignal) {
         this.sendSIGTERM();
-      } else if (key.toString() === '\u0003') {
-        process.exit(0);
+      } else if (key.toString() === this.phase.hardTerminatorSignal) {
+        this.hardStop();
       }
     });
+
+    if (this.phase.terminator) {
+      this.phase.terminator.signal.addEventListener('abort', () => {
+        if (this.phase.terminator?.signal.reason === 'hard') {
+          this.hardStop();
+        } else {
+          this.sendSIGTERM();
+        }
+      });
+    }
   }
 
   private reCalculateClientsStatus() {
@@ -180,11 +192,15 @@ export class TaskManager extends EventEmitter {
     return status;
   }
 
-  private handleReport() {
+  private async handleReport() {
     for (const { workerStatus } of Object.values(this.workersStatus)) {
       if (workerStatus === 'running') {
         return;
       }
+    }
+
+    for (const { hardTerminator } of Object.values(this.workersStatus)) {
+      await hardTerminator();
     }
 
     process.stdin.setRawMode(false);
@@ -300,8 +316,20 @@ export class TaskManager extends EventEmitter {
   }
 
   private sendSIGTERM() {
-    for (const { terminator } of Object.values(this.workersStatus)) {
-      terminator();
+    for (const { softTerminator } of Object.values(this.workersStatus)) {
+      softTerminator();
     }
+  }
+
+  private async hardStop() {
+    for (const { hardTerminator } of Object.values(this.workersStatus)) {
+      await hardTerminator();
+    }
+
+    process.stdin.setRawMode(false);
+    process.stdin.removeAllListeners('data');
+    process.stdin.pause();
+
+    this.emit('hard-stopped');
   }
 }

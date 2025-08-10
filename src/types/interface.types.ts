@@ -22,6 +22,9 @@ export interface IOStressOptions {
  * @property {StressScenarioInitializer} [scenarioInitializer] - Optional function to initialize the socket connection
  * @property {string} scenarioPath - The js file that exports stress test scenario function to execute
  * @property {number} [scenarioTimeout] - Optional timeout in milliseconds for the scenario
+ * @property {string} [softTerminatorSignal] - Optional single character signal string to terminate the stress test gracefully (passed from terminal)
+ * @property {string} [hardTerminatorSignal] - Optional single character signal string to terminate the stress test gracefully (passed from terminal)
+ * @property {AbortController} [terminator] - Optional abort controller to use instead of terminal signal
  * @property {string} [reportsPath] - Optional reports directory path. default: current process cwd
  * @property {string} [logsPath] - Optional path for logs directory. default: current process cwd
  */
@@ -33,6 +36,9 @@ export interface StressPhase {
   scenarioInitializer?: StressScenarioInitializer;
   scenarioPath: string;
   scenarioTimeout?: number;
+  softTerminatorSignal?: string;
+  hardTerminatorSignal?: string;
+  terminator?: AbortController;
   reportsPath?: string;
   logsPath?: string;
 }
@@ -40,7 +46,7 @@ export interface StressPhase {
 /**
  * A function that returns Socket.io client connection configuration options
  * @param {number} clientNumber - The client number (attempt) to initialize
- * @returns {Partial<ManagerOptions & SocketOptions>} Socket configuration options
+ * @returns {Partial<ManagerOptions & SocketOptions> | Promise<Partial<ManagerOptions & SocketOptions>>} Socket configuration options
  */
 export type StressScenarioInitializer = (
   clientNumber: number,
