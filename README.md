@@ -160,7 +160,7 @@ Use `logger` to output messages instead of `console.log`. Your logs are automati
 > You **must** call `socket.disconnect()` at the end of the scenario, or it will hang indefinitely.
 
 > [!NOTE]
-> Press `t` (specified softTerminatorSignal, or SIG_SOFT at your custom `AbortController`) during execution to gracefully terminate a phase and generate the report. Use `Ctrl+C` (specified hardTerminatorSignal or SIG_HARD at your custom `AbortController`) to terminate forcefully.
+> Press `t` (specified softTerminatorSignal, or `SIG_SOFT` at your custom `AbortController`) during execution to gracefully terminate a phase and generate the report. Use `Ctrl+C` (specified hardTerminatorSignal or `SIG_HARD` at your custom `AbortController`) to terminate forcefully.
 
 ---
 
