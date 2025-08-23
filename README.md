@@ -31,7 +31,7 @@ yarn add -D iostress
 
 ## 🚀 Getting Started
 
-iostress separates the test configuration from scenario logic. Your typical project structure may look like this:
+iostress separates the test configuration from scenario logic. Your typical project iostress tests file structure may look like this:
 
 ```
 tests/
@@ -45,6 +45,10 @@ tests/
 ```js
 const stressTest = new IOStress({
   target: 'http://localhost:3000',
+  interfaceOptions: defaultTerminalInterface({
+    logsDir: path.join(__dirname, 'stress-logs'),
+    reportsDir: path.join(__dirname, 'stress-reports'),
+  }),
   phases: [
     {
       name: 'Low Pressure',
@@ -56,8 +60,6 @@ const stressTest = new IOStress({
       }),
       scenarioPath: join(__dirname, 'low-pressure.scenario.js'),
       scenarioTimeout: 20000,
-      logsPath: path.join(__dirname, 'stress-logs'),
-      reportsPath: path.join(__dirname, 'stress-reports'),
     },
     {
       name: 'More Pressure',
@@ -68,13 +70,11 @@ const stressTest = new IOStress({
         extraHeaders: { token: clientNumber },
       }),
       scenarioPath: join(__dirname, 'high-pressure.scenario.js'),
-      logsPath: path.join(__dirname, 'stress-logs'),
-      reportsPath: path.join(__dirname, 'stress-reports'),
     },
   ],
 });
 
-stressTest.run();
+stressTest.run().then(() => process.exit(0));
 ```
 
 ### Example: Scenario (`low-pressure.scenario.js`)
@@ -108,24 +108,32 @@ Create an instance of the stress tester.
 
 **Options:**
 
-| Name     | Type            | Required | Description         |
-| -------- | --------------- | -------- | ------------------- |
-| `target` | `string`        | ✅       | The target URL      |
-| `phases` | `StressPhase[]` | ✅       | List of test phases |
+| Name               | Type                     | Required | Description             |
+| ------------------ | ------------------------ | -------- | ----------------------- |
+| `target`           | `string`                 | ✅       | The target URL          |
+| `interfaceOptions` | `StressInterfaceOptions` | ❌       | API interaction options |
+| `phases`           | `StressPhase[]`          | ✅       | List of test phases     |
+
+### `StressInterfaceOptions` Object
+
+| Name            | Type                                          | Required | Description                                                           |
+| --------------- | --------------------------------------------- | -------- | --------------------------------------------------------------------- |
+| `terminator`    | `() => AbortController`                       | ❌       | `AbortController` factory function                                    |
+| `eventsHandler` | `(eventEmitter: StressEventsEmitter) => void` | ❌       | A function that listens on `StressEvents` via provided `eventEmitter` |
+| `logsDir`       | `string`                                      | ❌       | Logs directory absolute path                                          |
 
 ### `StressPhase` Object
 
-| Name                  | Type                                      | Required | Description                      |
-| --------------------- | ----------------------------------------- | -------- | -------------------------------- |
-| `name`                | `string`                                  | ✅       | Name of the test phase           |
-| `minClients`          | `number`                                  | ✅       | Initial number of clients        |
-| `maxClients`          | `number`                                  | ❌       | Maximum clients to scale to      |
-| `rampDelayRate`       | `number` (default: 100)                   | ❌       | Delay rate between client spawns |
-| `scenarioInitializer` | `(clientNumber: number) => ClientOptions` | ❌       | Customize client options         |
-| `scenarioPath`        | `string`                                  | ✅       | Absolute path to scenario file   |
-| `scenarioTimeout`     | `number`                                  | ❌       | Timeout per client (ms)          |
-| `reportsPath`         | `number`                                  | ❌       | Reports directory path           |
-| `logsPath`            | `string`                                  | ❌       | Logs directory path              |
+| Name                  | Type                                      | Required | Description                                                              |
+| --------------------- | ----------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| `name`                | `string`                                  | ✅       | Name of the test phase                                                   |
+| `minClients`          | `number`                                  | ✅       | Initial number of clients                                                |
+| `maxClients`          | `number`                                  | ❌       | Maximum clients to scale to                                              |
+| `rampDelayRate`       | `number` (default: 100)                   | ❌       | Delay rate between client spawns                                         |
+| `scenarioInitializer` | `(clientNumber: number) => ClientOptions` | ❌       | Customize client options                                                 |
+| `scenarioPath`        | `string`                                  | ✅       | Absolute path to scenario file                                           |
+| `scenarioTimeout`     | `number`                                  | ❌       | Timeout per client (ms)                                                  |
+| `interfaceOptions`    | `StressInterfaceOptions`                  | ❌       | API interaction options (each property will overrides top level options) |
 
 ---
 
@@ -152,7 +160,38 @@ Use `logger` to output messages instead of `console.log`. Your logs are automati
 > You **must** call `socket.disconnect()` at the end of the scenario, or it will hang indefinitely.
 
 > [!NOTE]
-> Press `t` during execution to gracefully terminate a phase and generate the report. Use `Ctrl+C` to terminate forcefully.
+> Press `t` (specified softTerminatorSignal, or SIG_SOFT at your custom `AbortController`) during execution to gracefully terminate a phase and generate the report. Use `Ctrl+C` (specified hardTerminatorSignal or SIG_HARD at your custom `AbortController`) to terminate forcefully.
+
+---
+
+## 🔧 Customize Interface Behaviors
+
+The `interfaceOptions` field at top-level options and phase-specific options is used to customize iostress interactions interface behaviors (showing tests status and termination signal). By default it filled with `defaultTerminalInterface()` function that you can also modify this default interface behavior with these properties:
+
+```typescript
+type defaultInterfaceOptions = {
+  softTerminatorSignal?: string; // a single character signal that terminates test softly and generate report at the end. default: 't'
+  hardTerminatorSignal?: string; // a single character signal that terminates tests immediately. default: '\u0003' (Ctrl + C)
+  reportsDir?: string; // default: {process.cwd()}/iostress-reports
+  logsDir?: string; // default: process.cwd()
+}
+```
+
+If you don't like to use one major component of default interface, like that terminal signals you can just pick up default components that you need, like this:
+```typescript
+const opts: IOStressOptions = {
+  // ...
+  interfaceOptions: {
+    terminator: defaultTerminalTerminator(softSignal, hardSignal), // or your custom terminator
+    eventsHandler: defaultTerminalEventsHandler(reportsDir), // or your custom events handler
+    logsDir: process.cwd() // or your custom logs path
+  }
+  // ...
+}
+```
+
+> [!NOTE]
+> Your phase will consume these options by combining top-level options and phase-specific options (phase-specific options has higher priority and only if an option does not exist here it will delegate to top-level options).
 
 ---
 
@@ -175,7 +214,7 @@ You can write your scenario files in TypeScript (.ts) — no manual setup requir
 
 Each phase generates a `{phase-name}.report.json` file in your root folder.
 
-### Example Schema
+### Schema
 
 ```ts
 interface StressReport {

@@ -155,6 +155,15 @@ export function defaultTerminalTerminator(
   softTerminatorSignal = 't',
   hardTerminatorSignal = '\u0003',
 ) {
+  if (softTerminatorSignal === hardTerminatorSignal)
+    throw new Error(
+      'softTerminatorSignal and hardTerminatorSignal cannot be the same!',
+    );
+  if (softTerminatorSignal.length !== 1)
+    throw new Error('softTerminatorSignal must be a single character!');
+  if (hardTerminatorSignal.length !== 1)
+    throw new Error('hardTerminatorSignal must be a single character!');
+
   return function terminalTerminator() {
     const abortController = new AbortController();
 
