@@ -1,5 +1,5 @@
-import { io, ManagerOptions, Socket, SocketOptions } from 'socket.io-client';
-import { ClientOptions, ClientReport, StressScenario } from '../types';
+import { io, Socket } from 'socket.io-client';
+import { ClientOptions, ClientReport } from '../types';
 import { Performance } from '../utils';
 import { isPromise } from 'node:util/types';
 import EventEmitter from 'node:events';
