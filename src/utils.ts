@@ -2,6 +2,8 @@ import ts from 'typescript';
 import fs from 'fs';
 import path from 'path';
 import kleur from 'kleur';
+import EventEmitter from 'events';
+import { StressEvents } from './types';
 
 export class Performance {
   private timers: Record<number, [number, number]> = {};
@@ -25,6 +27,36 @@ export class Performance {
   start() {
     this.timers[this.incrementorIdx] = process.hrtime();
     return this.incrementorIdx++;
+  }
+}
+
+export class StressEventsEmitter extends EventEmitter {
+  override on<K extends keyof StressEvents>(
+    eventName: K,
+    listener: StressEvents[K],
+  ): this {
+    return super.on(eventName as string, listener);
+  }
+
+  override emit<K extends keyof StressEvents>(
+    eventName: K,
+    ...args: Parameters<StressEvents[K]>
+  ): boolean {
+    return super.emit(eventName as string, ...args);
+  }
+
+  override once<K extends keyof StressEvents>(
+    eventName: K,
+    listener: StressEvents[K],
+  ): this {
+    return super.once(eventName as string, listener);
+  }
+
+  override off<K extends keyof StressEvents>(
+    eventName: K,
+    listener: StressEvents[K],
+  ): this {
+    return super.off(eventName as string, listener);
   }
 }
 
