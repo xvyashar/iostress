@@ -30,13 +30,10 @@ export class Client extends EventEmitter {
   private performance: Performance = new Performance();
   private logger;
 
-  constructor(
-    private readonly options: ClientOptions,
-    initializer: Partial<ManagerOptions & SocketOptions>,
-  ) {
+  constructor(private readonly options: ClientOptions) {
     super();
 
-    this.logger = new Logger(options.logsPath);
+    this.logger = new Logger(options.logsDir);
 
     this.logger.on('error', (type) => {
       this.report.errors.total++;
@@ -45,7 +42,7 @@ export class Client extends EventEmitter {
     });
 
     const connTimer = this.performance.start();
-    this.socket = io(this.options.target, initializer);
+    this.socket = io(this.options.target, options.initializer);
 
     //* Connection events
     this.socket.on('connect', () => {

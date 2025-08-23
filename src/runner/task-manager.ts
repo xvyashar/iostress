@@ -1,10 +1,11 @@
 import { ManagerOptions } from 'socket.io-client';
 import {
   ClientStatus,
+  ResolvedStressPhase,
   RunnerReport,
   SerializableStressPhase,
-  StressPhase,
   StressReport,
+  TerminationSignal,
 } from '../types';
 import { SocketOptions } from 'dgram';
 import { availableParallelism } from 'os';
@@ -15,8 +16,8 @@ import { calculatePercentiles, Performance } from '../utils';
 import { pathToFileURL } from 'node:url';
 
 export class TaskManager extends EventEmitter {
-  private performance = new Performance();
-  private phaseTimer?: number;
+  private performance = new Performance(); //? latency measuring tool
+  private phaseTimer?: number; //? whole phase test duration timer
 
   private workersStatus: Record<
     number,
@@ -28,6 +29,7 @@ export class TaskManager extends EventEmitter {
       hardTerminator: () => Promise<number>;
     }
   > = {};
+  private workerErrors: Record<number, any[]> = {};
 
   private clientsStatus: ClientStatus = {
     readyClients: 0,
@@ -35,31 +37,16 @@ export class TaskManager extends EventEmitter {
     finishedClients: 0,
   };
 
-  private workerErrors: Record<number, any[]> = {};
-
   constructor(
-    private readonly target: string,
-    private readonly phase: Omit<StressPhase, 'scenarioInitializer'> & {
+    private readonly phase: Omit<ResolvedStressPhase, 'scenarioInitializer'> & {
       initializers: Partial<ManagerOptions & SocketOptions>[];
     },
   ) {
     super();
   }
 
-  async validateScenario() {
-    const scenarioPath = pathToFileURL(this.phase.scenarioPath).href;
-    let fn = (await import(scenarioPath)).default;
-
-    if (typeof fn !== 'function' && typeof fn.default !== 'function')
-      throw new Error(
-        `Scenario file must export a default function!\n  - esm: export default ...\n  - cjs: module.exports = ...;`,
-      );
-
-    return true;
-  }
-
   async run() {
-    const threadsCount = availableParallelism();
+    const threadsCount = availableParallelism() || 1;
     const starterClientsPerThread = Math.ceil(
       this.phase.minClients / threadsCount,
     );
@@ -89,17 +76,15 @@ export class TaskManager extends EventEmitter {
       const worker = new Worker(path.join(__dirname, 'test-runner.js'), {
         stdout: false,
         workerData: {
-          target: this.target,
-          phase: {
-            name: this.phase.name,
-            starterInitializers,
-            finalInitializers,
-            rampDelayRate: this.phase.rampDelayRate,
-            scenarioPath,
-            scenarioTimeout: this.phase.scenarioTimeout,
-            logsPath: this.phase.logsPath,
-          } as SerializableStressPhase,
-        },
+          target: this.phase.target,
+          name: this.phase.name,
+          starterInitializers,
+          finalInitializers,
+          rampDelayRate: this.phase.rampDelayRate,
+          scenarioPath,
+          scenarioTimeout: this.phase.scenarioTimeout,
+          logsDir: this.phase.interfaceOptions.logsDir,
+        } as SerializableStressPhase,
       });
 
       this.workersStatus[worker.threadId] = {
@@ -153,26 +138,24 @@ export class TaskManager extends EventEmitter {
       });
     }
 
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-
-    process.stdin.on('data', (key) => {
-      if (key.toString() === this.phase.softTerminatorSignal) {
-        this.sendSIGTERM();
-      } else if (key.toString() === this.phase.hardTerminatorSignal) {
-        this.hardStop();
-      }
-    });
-
-    if (this.phase.terminator) {
-      this.phase.terminator.signal.addEventListener('abort', () => {
-        if (this.phase.terminator?.signal.reason === 'hard') {
-          this.hardStop();
-        } else {
-          this.sendSIGTERM();
-        }
-      });
+    if (this.phase.interfaceOptions.terminator) {
+      this.phase.interfaceOptions.terminator.signal.addEventListener(
+        'abort',
+        () => {
+          if (
+            this.phase.interfaceOptions.terminator?.signal.reason ==
+            TerminationSignal.SIG_HARD
+          ) {
+            this.hardStop();
+          } else if (
+            this.phase.interfaceOptions.terminator?.signal.reason ==
+            TerminationSignal.SIG_SOFT
+          ) {
+            this.sendSIGTERM();
+          }
+        },
+        { once: true },
+      );
     }
   }
 
@@ -203,9 +186,7 @@ export class TaskManager extends EventEmitter {
       await hardTerminator();
     }
 
-    process.stdin.setRawMode(false);
-    process.stdin.removeAllListeners('data');
-    process.stdin.pause();
+    this.phase.interfaceOptions.terminator.abort(TerminationSignal.SIG_CLEANUP);
 
     this.emit('gathering');
 
@@ -325,10 +306,6 @@ export class TaskManager extends EventEmitter {
     for (const { hardTerminator } of Object.values(this.workersStatus)) {
       await hardTerminator();
     }
-
-    process.stdin.setRawMode(false);
-    process.stdin.removeAllListeners('data');
-    process.stdin.pause();
 
     this.emit('hard-stopped');
   }

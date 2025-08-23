@@ -5,7 +5,7 @@ import { createLogger, format, transports, Logger as WinLogger } from 'winston';
 export class Logger extends EventEmitter implements ILogger {
   private winston: WinLogger;
 
-  constructor(logsPath?: string) {
+  constructor(logsDir: string) {
     super();
 
     const { printf, combine, timestamp } = format;
@@ -21,17 +21,17 @@ export class Logger extends EventEmitter implements ILogger {
       format: combine(timestamp(), fileFormat),
       transports: [
         new transports.File({
-          dirname: logsPath,
+          dirname: logsDir,
           filename: 'iostress.error.log',
           level: 'error',
         }),
         new transports.File({
-          dirname: logsPath,
+          dirname: logsDir,
           filename: 'iostress.info.log',
           level: 'info',
         }),
         new transports.File({
-          dirname: logsPath,
+          dirname: logsDir,
           filename: 'iostress.combined.log',
         }),
       ],

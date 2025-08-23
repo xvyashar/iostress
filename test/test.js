@@ -1,11 +1,14 @@
-const { IOStress } = require('iostress');
+const { IOStress, defaultTerminalInterface } = require('iostress');
 const path = require('path');
-
-const jsAbortController = new AbortController();
-const tsAbortController = new AbortController();
 
 const stressTest = new IOStress({
   target: 'http://localhost:3000',
+  interfaceOptions: defaultTerminalInterface({
+    logsDir: path.join(__dirname, 'stress-logs'),
+    reportsDir: path.join(__dirname, 'stress-reports'),
+    softTerminatorSignal: 'q',
+    hardTerminatorSignal: 'Q',
+  }),
   phases: [
     {
       name: 'JS Test',
@@ -16,9 +19,6 @@ const stressTest = new IOStress({
       },
       scenarioPath: path.join(__dirname, 'scenario.js'),
       scenarioTimeout: 20000,
-      terminator: jsAbortController,
-      reportsPath: path.join(__dirname, 'stress-reports'),
-      logsPath: path.join(__dirname, 'stress-logs'),
     },
     {
       name: 'TS Test',
@@ -28,14 +28,8 @@ const stressTest = new IOStress({
         return { extraHeaders: { token: clientNumber } };
       },
       scenarioPath: path.join(__dirname, 'scenario.ts'),
-      terminator: tsAbortController,
-      reportsPath: path.join(__dirname, 'stress-reports'),
-      logsPath: path.join(__dirname, 'stress-logs'),
     },
   ],
 });
 
-stressTest.run();
-
-setTimeout(() => jsAbortController.abort(), 3000);
-setTimeout(() => tsAbortController.abort('hard'), 10000);
+stressTest.run().then(() => process.exit(0));

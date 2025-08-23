@@ -5,18 +5,13 @@ import { random, sleep } from '../utils';
 
 const {
   target,
-  phase: {
-    starterInitializers,
-    finalInitializers,
-    rampDelayRate,
-    scenarioPath,
-    scenarioTimeout,
-    logsPath,
-  },
-} = workerData as {
-  target: string;
-  phase: SerializableStressPhase;
-};
+  starterInitializers,
+  finalInitializers,
+  rampDelayRate,
+  scenarioPath,
+  scenarioTimeout,
+  logsDir,
+} = workerData as SerializableStressPhase;
 
 const runnerReport: RunnerReport = {
   connections: {
@@ -52,7 +47,7 @@ const runPhaseSlice = async () => {
   let lazy = false;
 
   for (const initializer of [...starterInitializers, ...finalInitializers]) {
-    if (lazy) await sleep(random(1, 10) * (rampDelayRate ?? 100));
+    if (lazy) await sleep(random(1, 10) * rampDelayRate);
 
     readyClients++;
 
@@ -60,15 +55,13 @@ const runPhaseSlice = async () => {
       lazy = true;
     }
 
-    const client = new Client(
-      {
-        target,
-        scenarioPath,
-        scenarioTimeout,
-        logsPath,
-      },
+    const client = new Client({
+      target,
+      scenarioPath,
+      scenarioTimeout,
+      logsDir,
       initializer,
-    );
+    });
 
     client.on('running', () => {
       readyClients--;
